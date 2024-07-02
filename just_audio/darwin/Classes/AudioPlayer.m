@@ -727,12 +727,39 @@
 
 - (void)onItemStalled:(NSNotification *)notification {
     //IndexedPlayerItem *playerItem = (IndexedPlayerItem *)notification.object;
-    //NSLog(@"onItemStalled");
+    NSLog(@"onItemStalled");
+    NSLog(@"Handle stalled. Available: %lf", [self availableDuration]);
+    NSLog(@"Handle stalled. Current time: %lf", CMTimeGetSeconds(_player.currentItem.currentTime));
+    NSLog(@"Handle stalled. Current duration: %lf", CMTimeGetSeconds(_player.currentItem.duration));
+    NSLog(@"Handle stalled. Player rate:  %lf", _player.rate);
+
+    if (_player.currentItem.playbackLikelyToKeepUp || _player.currentItem.isPlaybackBufferFull ||
+        [self availableDuration] - CMTimeGetSeconds(_player.currentItem.currentTime) > 5.0) {
+        [_player play];
+    }
+    else if(_player.rate == 0) {
+        //after a while onFailToComplete triggers regardless, and we should try to force a play
+        [_player play];
+        [self performSelector:@selector(onItemStalled:) withObject:notification afterDelay:5.0]; //try again, isn't guaranteed
+    } 
+    else {
+        [self performSelector:@selector(onItemStalled:) withObject:notification afterDelay:0.5]; //try again
+    }
+}
+
+- (NSTimeInterval) availableDuration
+{
+    NSArray *loadedTimeRanges = [[_player currentItem] loadedTimeRanges];
+    CMTimeRange timeRange = [[loadedTimeRanges objectAtIndex:0] CMTimeRangeValue];
+    Float64 startSeconds = CMTimeGetSeconds(timeRange.start);
+    Float64 durationSeconds = CMTimeGetSeconds(timeRange.duration);
+    NSTimeInterval result = startSeconds + durationSeconds;
+    return result;
 }
 
 - (void)onFailToComplete:(NSNotification *)notification {
     //IndexedPlayerItem *playerItem = (IndexedPlayerItem *)notification.object;
-    //NSLog(@"onFailToComplete");
+    NSLog(@"onFailToComplete");
 }
 
 - (void)onComplete:(NSNotification *)notification {
