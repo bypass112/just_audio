@@ -760,6 +760,9 @@
 - (void)onFailToComplete:(NSNotification *)notification {
     //IndexedPlayerItem *playerItem = (IndexedPlayerItem *)notification.object;
     NSLog(@"onFailToComplete");
+    //send an error message to Flutter side
+    //see https://github.com/ryanheise/just_audio/issues/1277
+    [self abortExistingConnection];
 }
 
 - (void)onComplete:(NSNotification *)notification {
